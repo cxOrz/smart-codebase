@@ -4,11 +4,15 @@
  */
 
 import type { PluginInput, Hooks } from "@opencode-ai/plugin";
-import type { PluginConfig, Fact, GraphEdge } from "../types";
+import type { PluginConfig, Fact, GraphEdge, KnowledgeGraph } from "../types";
 import { appendFact } from "../storage/knowledge-writer";
 import { getKnowledgeDirectory } from "../storage/knowledge-writer";
 import { linkFact } from "../linking/knowledge-linker";
 import { unwrapData, extractTextFromParts, withTimeout } from "../utils/sdk-helpers";
+import { displayExtractionResult } from "../display/feedback";
+import { loadKnowledge } from "../storage/knowledge-loader";
+import { fileExists, readTextFile } from "../utils/fs-compat";
+import { join } from "path";
 
 type ToolExecuteAfterInput = Parameters<NonNullable<Hooks["tool.execute.after"]>>[0];
 type ToolExecuteAfterOutput = Parameters<NonNullable<Hooks["tool.execute.after"]>>[1];
@@ -303,12 +307,48 @@ If no significant learnings, return empty array: []`;
         clearTimeout(existingTimer);
       }
 
-      // Set new debounce timer (default: 30 seconds)
-      const debounceMs = config?.debounceMs ?? 30000;
-      const timer = setTimeout(async () => {
-        await extractKnowledge(ctx, sessionID);
-        sessionDebounceTimers.delete(sessionID);
-      }, debounceMs);
+       // Set new debounce timer (default: 30 seconds)
+       const debounceMs = config?.debounceMs ?? 30000;
+       const timer = setTimeout(async () => {
+         const results = await extractKnowledge(ctx, sessionID);
+         
+         // Get total counts for statistics
+         const allFacts = await loadKnowledge(ctx.directory);
+         const totalFacts = allFacts.length;
+         
+         // Load graph for total link count
+         const graphPath = join(ctx.directory, '.codebase-memory', 'graph.json');
+         let totalLinks = 0;
+         try {
+           if (await fileExists(graphPath)) {
+             const graphContent = await readTextFile(graphPath);
+             const graph: KnowledgeGraph = JSON.parse(graphContent);
+             totalLinks = graph.edges.length;
+           }
+         } catch (error) {
+           console.error('[smart-codebase] Failed to load graph for stats:', error);
+         }
+         
+         // Format and display results
+         const message = displayExtractionResult(
+           results.facts,
+           results.links,
+           totalFacts,
+           totalLinks
+         );
+         
+         // Show toast notification
+         await ctx.client.tui.showToast({
+           body: {
+             title: "smart-codebase",
+             message,
+             variant: "success",
+             duration: 5000,
+           },
+         }).catch(() => {});
+         
+         sessionDebounceTimers.delete(sessionID);
+       }, debounceMs);
 
       sessionDebounceTimers.set(sessionID, timer);
       console.log(`[smart-codebase] Session ${sessionID} idle, extraction scheduled in ${debounceMs}ms`);
