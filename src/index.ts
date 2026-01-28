@@ -23,7 +23,7 @@ const COMMAND_CONFIGS = {
     description: "Display knowledge base status",
   },
   "sc-rebuild-index": {
-    template: "Use sc-rebuild-index to rebuild global knowledge index. Scans all .knowledge/ directories and rebuilds KNOWLEDGE.md.",
+    template: "Use sc-rebuild-index to rebuild global knowledge index. Scans all .knowledge/ directories and rebuilds .knowledge/KNOWLEDGE.md.",
     description: "Rebuild knowledge index",
   },
 } as const;

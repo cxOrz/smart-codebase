@@ -78,7 +78,7 @@ export async function updateGlobalIndex(
   projectRoot: string,
   entry: IndexEntry
 ): Promise<void> {
-  const indexPath = join(projectRoot, 'KNOWLEDGE.md');
+  const indexPath = join(projectRoot, '.knowledge', 'KNOWLEDGE.md');
   const lockFile = join(projectRoot, '.knowledge.lock');
 
   const lock = await acquireLock(lockFile, 5000);

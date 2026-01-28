@@ -23,7 +23,7 @@ export function createContextInjectorHook(ctx: PluginInput, config?: PluginConfi
     }
 
     try {
-      const knowledgePath = join(ctx.directory, 'KNOWLEDGE.md');
+      const knowledgePath = join(ctx.directory, '.knowledge', 'KNOWLEDGE.md');
       const hasKnowledge = await fileExists(knowledgePath);
 
       if (!hasKnowledge) {
@@ -34,7 +34,7 @@ export function createContextInjectorHook(ctx: PluginInput, config?: PluginConfi
       const knowledgeHint = `
 
 ---
-**[Project Knowledge Available]** Read \`KNOWLEDGE.md\` to see available skills. Each skill lists module-specific patterns, decisions, and gotchas. Read relevant \`.knowledge/SKILL.md\` files before modifying unfamiliar code.
+**[REQUIRED FIRST STEP]** Before any other action, read \`.knowledge/KNOWLEDGE.md\` to discover available project knowledge. Then read relevant \`.knowledge/SKILL.md\` files for modules you'll modify. Do NOT skip this step.
 ---
 
 `;

@@ -44,14 +44,14 @@ ${description}
 
 ${entries.join('\n')}`;
       
-      const indexPath = join(ctx.directory, 'KNOWLEDGE.md');
+      const indexPath = join(ctx.directory, '.knowledge', 'KNOWLEDGE.md');
       await writeTextFile(indexPath, indexContent);
       
       return `🔄 Knowledge index rebuilt
 
 Scanned modules: ${skillFiles.length}
 Successfully parsed: ${entries.length}
-Index location: KNOWLEDGE.md`;
+Index location: .knowledge/KNOWLEDGE.md`;
       
     } catch (error) {
       console.error('[smart-codebase] Rebuild index command failed:', error);

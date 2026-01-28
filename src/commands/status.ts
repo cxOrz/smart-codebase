@@ -17,7 +17,7 @@ export const statusCommand = tool({
       
       return `📚 smart-codebase Knowledge Status
 
-Global index (KNOWLEDGE.md): ${indexStatus}
+Global index (.knowledge/KNOWLEDGE.md): ${indexStatus}
 Module count: ${stats.moduleCount}
 
 Modules with knowledge:
@@ -31,7 +31,7 @@ ${moduleList}`;
 });
 
 async function getKnowledgeStats(projectRoot: string): Promise<KnowledgeStats> {
-  const indexPath = join(projectRoot, 'KNOWLEDGE.md');
+  const indexPath = join(projectRoot, '.knowledge', 'KNOWLEDGE.md');
   const hasGlobalIndex = await fileExists(indexPath);
   
   const skillFiles = await findFiles('**/.knowledge/SKILL.md', {
