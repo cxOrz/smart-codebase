@@ -20,37 +20,27 @@ Every time you start a new session, AI starts from scratch. It doesn't remember:
 
 smart-codebase automatically captures knowledge from your sessions and makes it available to future sessions.
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         KNOWLEDGE CYCLE                             │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│   ┌──────────┐    idle     ┌───────────┐         ┌──────────────┐  │
-│   │ Session  │ ──────────► │ Extractor │ ──────► │  SKILL.md    │  │
-│   │  Work    │   15sec     │    (AI)   │  write  │  (per module)│  │
-│   └──────────┘             └───────────┘         └──────┬───────┘  │
-│                                   │                      │         │
-│                                   │ update               │         │
-│                                   ▼                      │         │
-│                            ┌─────────────┐               │         │
-│                            │ KNOWLEDGE.md│◄──────────────┘         │
-│                            │   (index)   │     register            │
-│                            └──────┬──────┘                         │
-│                                   │                                │
-│   ┌──────────┐    inject   ┌──────┴──────┐         ┌───────────┐   │
-│   │   New    │ ◄────────── │  Injector   │ ◄────── │  Session  │   │
-│   │ Session  │    hint     │             │  start  │  Created  │   │
-│   └────┬─────┘             └─────────────┘         └───────────┘   │
-│        │                                                           │
-│        │ reads                                                     │
-│        ▼                                                           │
-│   ┌──────────────────────────────────────┐                         │
-│   │  .knowledge/KNOWLEDGE.md             │                         │
-│   │  └─► src/auth/.knowledge/SKILL.md    │                         │
-│   │  └─► src/api/.knowledge/SKILL.md     │                         │
-│   └──────────────────────────────────────┘                         │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    Start([Session Work])
+    Idle[Idle 15 sec]
+    Extractor[AI Extractor Analyzes]
+    SkillFile[SKILL.md<br/>Per Module]
+    KnowledgeIndex[KNOWLEDGE.md<br/>Global Index]
+    NewSession([New Session Starts])
+    Injector[Knowledge Injector]
+    ReadKnowledge[Read Knowledge]
+    
+    Start -->|15sec inactivity| Idle
+    Idle --> Extractor
+    Extractor -->|write| SkillFile
+    SkillFile -->|register| KnowledgeIndex
+    Extractor -->|update| KnowledgeIndex
+    
+    NewSession --> Injector
+    Injector -->|inject hint| ReadKnowledge
+    ReadKnowledge -->|load| KnowledgeIndex
+    KnowledgeIndex -.->|references| SkillFile
 ```
 
 ---

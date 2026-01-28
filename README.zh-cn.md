@@ -20,37 +20,27 @@
 
 smart-codebase 自动从会话中捕获知识，并使其可供未来会话使用。
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         KNOWLEDGE CYCLE                             │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│   ┌──────────┐    idle     ┌───────────┐         ┌──────────────┐  │
-│   │ Session  │ ──────────► │ Extractor │ ──────► │  SKILL.md    │  │
-│   │  Work    │   15sec     │    (AI)   │  write  │  (per module)│  │
-│   └──────────┘             └───────────┘         └──────┬───────┘  │
-│                                   │                      │         │
-│                                   │ update               │         │
-│                                   ▼                      │         │
-│                            ┌─────────────┐               │         │
-│                            │ KNOWLEDGE.md│◄──────────────┘         │
-│                            │   (index)   │     register            │
-│                            └──────┬──────┘                         │
-│                                   │                                │
-│   ┌──────────┐    inject   ┌──────┴──────┐         ┌───────────┐   │
-│   │   New    │ ◄────────── │  Injector   │ ◄────── │  Session  │   │
-│   │ Session  │    hint     │             │  start  │  Created  │   │
-│   └────┬─────┘             └─────────────┘         └───────────┘   │
-│        │                                                           │
-│        │ reads                                                     │
-│        ▼                                                           │
-│   ┌──────────────────────────────────────┐                         │
-│   │  .knowledge/KNOWLEDGE.md             │                         │
-│   │  └─► src/auth/.knowledge/SKILL.md    │                         │
-│   │  └─► src/api/.knowledge/SKILL.md     │                         │
-│   └──────────────────────────────────────┘                         │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    Start([会话工作])
+    Idle[空闲 15 秒]
+    Extractor[AI 提取器分析]
+    SkillFile[SKILL.md<br/>模块知识]
+    KnowledgeIndex[KNOWLEDGE.md<br/>全局索引]
+    NewSession([新会话开始])
+    Injector[知识注入器]
+    ReadKnowledge[读取知识库]
+    
+    Start -->|15秒无活动| Idle
+    Idle --> Extractor
+    Extractor -->|写入| SkillFile
+    SkillFile -->|注册| KnowledgeIndex
+    Extractor -->|更新| KnowledgeIndex
+    
+    NewSession --> Injector
+    Injector -->|注入提示| ReadKnowledge
+    ReadKnowledge -->|加载| KnowledgeIndex
+    KnowledgeIndex -.->|引用| SkillFile
 ```
 
 ---
