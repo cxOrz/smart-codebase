@@ -218,7 +218,7 @@ Return ONLY valid JSON. No knowledge: {"skill": null}`;
       description: skillContent.metadata.description,
       location: modulePath === '.' 
         ? `.opencode/skills/${getProjectSkillName(ctx.directory)}/SKILL.md`
-        : `${modulePath}/.knowledge/SKILL.md`
+        : `modules/${toSkillName(modulePath)}.md`
     };
 
      await updateSkillIndex(ctx.directory, indexEntry);
