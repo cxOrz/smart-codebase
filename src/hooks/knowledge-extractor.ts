@@ -247,6 +247,17 @@ Return ONLY valid JSON. No knowledge: {"skill": null}`;
   }
 }
 
+export function cancelPendingExtraction(sessionID: string): boolean {
+  const timer = sessionDebounceTimers.get(sessionID);
+  if (timer) {
+    clearTimeout(timer);
+    sessionDebounceTimers.delete(sessionID);
+    console.log(`[smart-codebase] Cancelled pending extraction for session ${sessionID}`);
+    return true;
+  }
+  return false;
+}
+
 export function createKnowledgeExtractorHook(ctx: PluginInput, config?: PluginConfig) {
   const toolExecuteAfter = async (
     input: ToolExecuteAfterInput,

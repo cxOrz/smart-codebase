@@ -4,7 +4,7 @@ import { statusCommand } from "./commands/status";
 import { rebuildIndexCommand } from "./commands/rebuild-index";
 import { cleanupCommand } from "./commands/cleanup";
 import { createContextInjectorHook } from "./hooks/context-injector";
-import { createKnowledgeExtractorHook } from "./hooks/knowledge-extractor";
+import { createKnowledgeExtractorHook, cancelPendingExtraction } from "./hooks/knowledge-extractor";
 import { setPluginInput } from "./plugin-context";
 import { loadConfig } from "./config";
 import { trackSkillAccess, shouldTrackPath } from "./storage/usage-tracker";
@@ -77,9 +77,12 @@ const SmartCodebasePlugin: Plugin = async (input) => {
           }
         }
       },
-      "chat.message": async (hookInput, output) => {
-        await contextInjector["chat.message"]?.(hookInput, output);
-      },
+       "chat.message": async (hookInput, output) => {
+         // Cancel any pending extraction when user sends a message
+         cancelPendingExtraction(hookInput.sessionID);
+         
+         await contextInjector["chat.message"]?.(hookInput, output);
+       },
       event: async (hookInput) => {
         if (!hasShownWelcomeToast && hookInput.event.type === "session.created") {
           hasShownWelcomeToast = true;
