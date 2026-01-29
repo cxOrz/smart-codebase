@@ -78,8 +78,17 @@ const SmartCodebasePlugin: Plugin = async (input) => {
         }
       },
        "chat.message": async (hookInput, output) => {
-         // Cancel any pending extraction when user sends a message
-         cancelPendingExtraction(hookInput.sessionID);
+         const wasCancelled = cancelPendingExtraction(hookInput.sessionID);
+         if (wasCancelled) {
+           await input.client.tui.showToast({
+             body: {
+               title: "smart-codebase",
+               message: "知识提取已取消，继续工作...",
+               variant: "info",
+               duration: 2000,
+             },
+           }).catch(() => {});
+         }
          
          await contextInjector["chat.message"]?.(hookInput, output);
        },
