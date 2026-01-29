@@ -99,7 +99,7 @@ export async function extractKnowledge(
          title: "smart-codebase",
          message: "正在创建知识提取子会话，开始分析...",
          variant: "info",
-         duration: 3000,
+         duration: 5000,
        },
      }).catch(() => {});
 
@@ -325,7 +325,7 @@ export function createKnowledgeExtractorHook(ctx: PluginInput, config?: PluginCo
                title: "smart-codebase",
                message: "可运行 /sc-extract 提取知识",
                variant: "info",
-               duration: 8000,
+               duration: 5000,
              },
            }).catch(() => {});
            sessionToastShown.set(sessionID, true);
@@ -339,14 +339,14 @@ export function createKnowledgeExtractorHook(ctx: PluginInput, config?: PluginCo
         clearTimeout(existingTimer);
       }
 
-      const debounceMs = config?.debounceMs ?? 15000;
+      const debounceMs = config?.debounceMs ?? 60000;
       
       await ctx.client.tui.showToast({
         body: {
           title: "smart-codebase",
           message: `会话空闲，${debounceMs / 1000}秒后开始知识提取...`,
           variant: "info",
-          duration: 3000,
+          duration: 5000,
         },
       }).catch(() => {});
       console.log(`[smart-codebase] Countdown toast shown for session ${sessionID}`);

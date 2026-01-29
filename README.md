@@ -56,7 +56,7 @@ graph TB
 ## ⚙️ How It Works
 
 1. **You work normally** - Edit files, debug issues, make decisions
-2. **Session goes idle** - After 15 seconds of inactivity, toast notification appears
+2. **Session goes idle** - After 60 seconds of inactivity, toast notification appears
 3. **You can interrupt** - Send a message to cancel extraction and continue working
 4. **Extractor analyzes** - AI examines what changed and why (with progress notifications)
 5. **Knowledge captured** - Stored in `.opencode/skills/<project>/modules/<module>.md`
@@ -119,7 +119,7 @@ No configuration required by default. To customize, create `~/.config/opencode/s
 | Option | Default | Description |
 |--------|---------|-------------|
 | `enabled` | `true` | Enable/disable the plugin entirely |
-| `debounceMs` | `15000` | Wait time (ms) after session idle before extraction |
+| `debounceMs` | `60000` | Wait time (ms) after session idle before extraction |
 | `autoExtract` | `true` | Automatically extract knowledge on idle |
 | `autoInject` | `true` | Inject knowledge hint at session start |
 | `extractionModel` | - | Model for extraction, format: `providerID/modelID` |

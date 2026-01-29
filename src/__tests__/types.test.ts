@@ -86,7 +86,7 @@ test("PluginConfig allows cleanupThresholds to be undefined", () => {
 test("PluginConfig preserves existing fields alongside cleanupThresholds", () => {
   const fullConfig: PluginConfig = {
     enabled: true,
-    debounceMs: 15000,
+    debounceMs: 60000,
     autoExtract: true,
     autoInject: true,
     extractionModel: "openai/gpt-4o",
@@ -98,7 +98,7 @@ test("PluginConfig preserves existing fields alongside cleanupThresholds", () =>
   };
 
   expect(fullConfig.enabled).toBe(true);
-  expect(fullConfig.debounceMs).toBe(15000);
+  expect(fullConfig.debounceMs).toBe(60000);
   expect(fullConfig.autoExtract).toBe(true);
   expect(fullConfig.autoInject).toBe(true);
   expect(fullConfig.extractionModel).toBe("openai/gpt-4o");

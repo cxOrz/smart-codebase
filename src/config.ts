@@ -8,7 +8,7 @@ const CONFIG_FILE_NAMES = ["smart-codebase.jsonc", "smart-codebase.json"];
 
 const DEFAULT_CONFIG: PluginConfig = {
   enabled: true,
-  debounceMs: 15000,
+  debounceMs: 60000,
   autoExtract: true,
   autoInject: true,
   disabledCommands: [],

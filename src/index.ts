@@ -85,7 +85,7 @@ const SmartCodebasePlugin: Plugin = async (input) => {
                title: "smart-codebase",
                message: "知识提取已取消，继续工作...",
                variant: "info",
-               duration: 2000,
+               duration: 5000,
              },
            }).catch(() => {});
          }
@@ -100,7 +100,7 @@ const SmartCodebasePlugin: Plugin = async (input) => {
               title: "smart-codebase",
               message: "Knowledge base active",
               variant: "info",
-              duration: 3000,
+              duration: 5000,
             },
           }).catch(() => {});
         }
