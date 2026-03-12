@@ -1,3 +1,4 @@
+// @ts-ignore bun test runtime import
 import { describe, test, expect } from "bun:test";
 import { buildExtractionSystemPrompt } from "../extraction/system-prompt";
 
@@ -40,5 +41,11 @@ describe("buildExtractionSystemPrompt", () => {
   test("returns non-empty string", () => {
     const prompt = buildExtractionSystemPrompt(baseOptions);
     expect(prompt.length).toBeGreaterThan(100);
+  });
+
+  test("includes value check rule that prevents unnecessary updates", () => {
+    const prompt = buildExtractionSystemPrompt(baseOptions);
+    expect(prompt).toContain("Value check");
+    expect(prompt).toContain("no valuable");
   });
 });
