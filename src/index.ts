@@ -32,11 +32,11 @@ const SmartCodebasePlugin: Plugin = async (input) => {
         cfg.command = {
           ...cfg.command,
           "sc-update": {
-            template: "Use sc-update to update project SKILL files. Analyzes current session and extracts knowledge. Optional: specify focus area.",
+            template: "sc-update $ARGUMENTS",
             description: "Update project SKILL files from session knowledge",
           },
           "sc-init": {
-            template: "Use sc-init to initialize project SKILL files by scanning source code. Creates comprehensive knowledge from scratch. Optional: specify focus area.",
+            template: "sc-init $ARGUMENTS",
             description: "Initialize project SKILL files from source code scan",
           },
         };
