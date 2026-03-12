@@ -10,5 +10,5 @@ export interface PluginConfig {
    * Max token budget for extraction context.
    * Default: 16000
    */
-  extractionMaxTokens?: number;
+  extractionMaxTokens: number;
 }
