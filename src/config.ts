@@ -4,6 +4,8 @@ import type { PluginConfig } from "./types";
 import { stripJsonComments } from "./utils/jsonc";
 import { getOpenCodeConfigDir } from "./utils/paths";
 
+export type { PluginConfig } from "./types";
+
 const CONFIG_FILE_NAMES = ["smart-codebase.jsonc", "smart-codebase.json"];
 
 const DEFAULT_CONFIG: PluginConfig = {
