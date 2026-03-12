@@ -18,24 +18,31 @@
 
 ## ✨ 解决方案
 
-smart-codebase 自动从会话中捕获知识，并使其可供未来会话使用。
+Smart-Codebase 通过 SKILL 文件为你的 AI 提供永久记忆。它利用 AI Agent 自主从你的对话和项目文件中提取并沉淀知识。
 
 ```mermaid
 graph TB
     Start([会话工作])
-    Extractor[AI 提取器分析]
-    SkillFile[.knowledge/SKILL.md<br/>模块知识]
-    ProjectSkill[.opencode/skills/project/SKILL.md<br/>OpenCode 自动发现]
+    Init[sc-init 命令]
+    Update[sc-update 命令]
+    InitAgent[AI 扫描源代码]
+    UpdateAgent[AI 分析会话]
+    SkillFile[.opencode/skills/project/SKILL.md<br/>OpenCode 自动发现]
+    RefFiles[.opencode/skills/project/reference/*.md<br/>深度文档]
     NewSession([新会话开始])
-    Injector[知识注入器]
+    Injector[上下文注入器]
     
-    Start -->|空闲| Extractor
-    Extractor -->|写入| SkillFile
-    Extractor -->|更新索引| ProjectSkill
+    Start --> Init
+    Start --> Update
+    Init --> InitAgent
+    Update --> UpdateAgent
+    InitAgent -->|写入| SkillFile
+    InitAgent -->|写入| RefFiles
+    UpdateAgent -->|更新| SkillFile
+    UpdateAgent -->|更新| RefFiles
     
     NewSession --> Injector
-    Injector -->|注入提示| ProjectSkill
-    ProjectSkill -.->|引用| SkillFile
+    Injector -->|注入提示| SkillFile
 ```
 
 ---
@@ -47,23 +54,20 @@ graph TB
 - [⚡ 命令](#-命令)
 - [⚙️ 配置](#️-配置)
 - [📁 文件结构](#-文件结构)
-- [📊 使用统计](#-使用统计)
-- [🧹 清理命令](#-清理命令)
 - [🛠️ 开发](#️-开发)
 
 ---
 
 ## ⚙️ 工作原理
 
-1. **你正常工作** - 编辑文件、调试问题、做决策
-2. **会话空闲** - 60 秒无活动后，出现 toast 通知
-3. **你可以打断** - 发送消息即可取消提取并继续工作
-4. **提取器分析** - AI 检查发生了什么变化以及为什么（带进度通知）
-5. **知识被捕获** - 存储在 `.opencode/skills/<项目>/modules/<模块>.md` 中
-6. **索引更新** - 全局索引位于 `.opencode/skills/<项目>/SKILL.md`
-7. **下次会话开始** - AI 读取项目 skill，然后发现相关模块 skill
+1. **你正常工作** - 编辑文件、调试问题、做架构决策。
+2. **首次初始化** - 运行一次 `/sc-init`，扫描源代码并生成完整的 SKILL 文件。
+3. **持续更新** - 达到里程碑时，运行 `/sc-update` 从当前会话中提取知识。
+4. **AI Agent 分析** - 子 AI 会话会分析你的对话记录或项目代码，理解发生了什么变化以及为什么。
+5. **知识沉淀** - Agent 会自主编写或更新符合 OpenCode 标准格式的 SKILL 文件。
+6. **下次会话开始** - 新会话会自动发现项目 SKILLs，让 AI 立即获得项目上下文。
 
-**插件在后台静默工作。Toast 通知让你知情，而不打断你的工作流。**
+**手动控制意味着你决定何时保存知识，而 AI Agent 则承担了编写文档的繁重工作。**
 
 ---
 
@@ -93,121 +97,45 @@ npm install smart-codebase
 
 | 命令 | 描述 |
 |------|------|
-| `/sc-status` | 显示知识库状态和使用统计 |
-| `/sc-extract` | 手动触发知识沉淀 |
-| `/sc-rebuild-index` | 从所有 SKILL.md 文件重建 `.knowledge/KNOWLEDGE.md` |
-| `/sc-cleanup` | 清理低使用率 SKILL 文件（预览模式） |
-| `/sc-cleanup --confirm` | 实际删除低使用率 SKILL 文件 |
+| `/sc-init [focus?]` | 通过扫描源代码初始化项目 SKILL 文件。在首次使用 `/sc-update` 之前运行一次。 |
+| `/sc-update [focus?]` | 触发 AI Agent 从当前会话中提取知识。可以使用可选的 focus 参数来引导 Agent。 |
 
 ---
 
 ## ⚙️ 配置
 
-默认无须配置，如需改变默认配置，创建 `~/.config/opencode/smart-codebase.json`（或 `.jsonc`）：
+创建 `~/.config/opencode/smart-codebase.json` (或 `.jsonc`) 进行自定义配置：
 
 ```jsonc
 {
   "enabled": true,
-  "debounceMs": 30000,
-  "autoExtract": true,
-  "autoInject": true,
-  "extractionModel": "minimax/MiniMax-M2.1",
-  "disabledCommands": ["sc-rebuild-index"]
+  "extractionModel": "openai/gpt-4o",
+  "extractionMaxTokens": 16000
 }
 ```
 
 | 选项 | 默认值 | 描述 |
 |------|--------|------|
-| `enabled` | `true` | 完全启用/禁用插件 |
-| `debounceMs` | `60000` | 会话空闲后等待多久（毫秒）才提取 |
-| `autoExtract` | `true` | 空闲时自动提取知识 |
-| `autoInject` | `true` | 会话开始时注入知识提示 |
-| `extractionModel` | - | 知识提取使用的模型，格式：`providerID/modelID` |
-| `extractionMaxTokens` | `8000` | 提取上下文的最大 token 预算 |
-| `disabledCommands` | `[]` | 要禁用的命令，如 `["sc-rebuild-index"]` |
-| `cleanupThresholds` | 见下方 | 清理命令的阈值 |
-
-#### cleanupThresholds
-
-| 选项 | 默认值 | 描述 |
-|------|--------|------|
-| `cleanupThresholds.minAgeDays` | `60` | 清理合格的最小年龄（天） |
-| `cleanupThresholds.minAccessCount` | `5` | 清理合格的最大访问次数 |
-| `cleanupThresholds.maxInactiveDays` | `60` | 清理合格的最大未访问天数 |
+| `enabled` | `true` | 完全启用或禁用插件。 |
+| `extractionModel` | - | AI Agent 使用的模型 (例如 `providerID/modelID`)。 |
+| `extractionMaxTokens` | `16000` | 提取上下文的最大 token 预算。 |
 
 ---
 
-## 📁 文件结构示例
+## 📁 文件结构
+
+知识以标准 OpenCode SKILL 格式存储在项目目录中：
 
 ```
 project/
-├── .opencode/
-│   └── skills/
-│       └── <项目名>/
-│           ├── SKILL.md          # 项目 skill（主索引）
-│           └── modules/
-│               ├── src-auth.md   # 认证模块知识
-│               └── src-api.md    # API 模块知识
-│
-├── src/
-│   ├── auth/
-│   │   ├── session.ts
-│   │   └── jwt.ts
-│   │
-│   └── api/
-│       └── routes.ts
+└── .opencode/
+    └── skills/
+        └── <项目名>/
+            ├── SKILL.md          # 项目主 SKILL 和索引
+            └── reference/        # 详细的知识文档文件
+                ├── architecture.md
+                └── api-patterns.md
 ```
-
-`.opencode/skills/<项目>/SKILL.md` 作为全局索引，会被 OpenCode 自动发现。模块级别的知识存储在 `.opencode/skills/<项目>/modules/<模块名>.md` 中。
-
----
-
-### 📊 使用统计
-
-`/sc-status` 命令现在显示：
-- 总 SKILL 数量
-- 所有 SKILL 的总访问次数
-- 低频 SKILL 数量（基于 cleanupThresholds）
-- 使用情况分解（高/中/低）
-
-输出示例：
-```
-📊 使用统计：
-总 SKILL 数：15
-总访问次数：234
-低频 SKILL（< 5 次访问）：3
-
-使用情况分解：
-  - 高频使用（≥10 次访问）：8 个 SKILL
-  - 中频使用（5-10 次）：4 个 SKILL
-  - 低频使用（<5 次）：3 个 SKILL
-```
-
----
-
-### 🧹 清理命令
-
-根据可配置的阈值删除低使用率的 SKILL 文件。
-
-**预览模式（默认）**：
-```bash
-/sc-cleanup
-```
-
-列出合格的 SKILL 而不删除它们。
-
-**确认模式**：
-```bash
-/sc-cleanup --confirm
-```
-
-实际删除文件并更新主索引。
-
-**清理条件（AND 逻辑）**：
-当满足以下所有条件时，SKILL 即符合清理条件：
-1. 年龄 ≥ `minAgeDays`（默认：60 天）
-2. 访问次数 < `minAccessCount`（默认：5）
-3. 距离最后访问 ≥ `maxInactiveDays`（默认：60 天）
 
 ---
 
@@ -217,11 +145,14 @@ project/
 # 安装依赖
 bun install
 
-# 构建
+# 构建插件
 bun run build
 
-# 类型检查
+# 运行类型检查
 bun run typecheck
+
+# 运行测试
+bun test
 ```
 
 ---

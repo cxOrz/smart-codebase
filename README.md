@@ -18,24 +18,31 @@ Every time you start a new session, AI starts from scratch. It doesn't remember:
 
 ## ✨ The Solution
 
-smart-codebase automatically captures knowledge from your sessions and makes it available to future sessions.
+Smart-Codebase gives your AI permanent memory through SKILL files. It uses an AI agent to autonomously capture knowledge from your conversations and project files.
 
 ```mermaid
 graph TB
     Start([Session Work])
-    Extractor[AI Extractor Analyzes]
-    SkillFile[.knowledge/SKILL.md<br/>Per Module]
-    ProjectSkill[.opencode/skills/project/SKILL.md<br/>OpenCode Auto-Discovery]
+    Init[sc-init command]
+    Update[sc-update command]
+    InitAgent[AI Scans Source Code]
+    UpdateAgent[AI Analyzes Session]
+    SkillFile[.opencode/skills/project/SKILL.md<br/>OpenCode Auto-Discovery]
+    RefFiles[.opencode/skills/project/reference/*.md<br/>Deep Dive Docs]
     NewSession([New Session Starts])
-    Injector[Knowledge Injector]
+    Injector[Context Injector]
     
-    Start -->|idle| Extractor
-    Extractor -->|write| SkillFile
-    Extractor -->|update index| ProjectSkill
+    Start --> Init
+    Start --> Update
+    Init --> InitAgent
+    Update --> UpdateAgent
+    InitAgent -->|writes| SkillFile
+    InitAgent -->|writes| RefFiles
+    UpdateAgent -->|updates| SkillFile
+    UpdateAgent -->|updates| RefFiles
     
     NewSession --> Injector
-    Injector -->|inject hint| ProjectSkill
-    ProjectSkill -.->|references| SkillFile
+    Injector -->|inject hint| SkillFile
 ```
 
 ---
@@ -47,29 +54,26 @@ graph TB
 - [⚡ Commands](#-commands)
 - [⚙️ Configuration](#️-configuration)
 - [📁 File Structure](#-file-structure)
-- [📊 Usage Statistics](#-usage-statistics)
-- [🧹 Cleanup Command](#-cleanup-command)
 - [🛠️ Development](#️-development)
 
 ---
 
 ## ⚙️ How It Works
 
-1. **You work normally** - Edit files, debug issues, make decisions
-2. **Session goes idle** - After 60 seconds of inactivity, toast notification appears
-3. **You can interrupt** - Send a message to cancel extraction and continue working
-4. **Extractor analyzes** - AI examines what changed and why (with progress notifications)
-5. **Knowledge captured** - Stored in `.opencode/skills/<project>/modules/<module>.md`
-6. **Index updated** - Global index at `.opencode/skills/<project>/SKILL.md`
-7. **Next session starts** - AI reads project skill, then discovers relevant module skills
+1. **You work normally** - Edit files, debug issues, and make architectural decisions.
+2. **First time setup** - Run `/sc-init` once to scan your source code and generate comprehensive SKILL files.
+3. **Ongoing capture** - When you reach a milestone, run `/sc-update` to extract knowledge from the current session.
+4. **AI Agent analyzes** - A child AI session examines your conversation or project code to understand what changed and why.
+5. **Knowledge distilled** - The agent autonomously writes or updates SKILL files in standard OpenCode format.
+6. **Next session starts** - New sessions auto-discover your project SKILLs, giving the AI immediate context.
 
-**The plugin works silently in the background. Toast notifications keep you informed without interrupting your flow.**
+**Manual control means you decide exactly when to preserve knowledge. The AI agent handles the heavy lifting of writing documentation.**
 
 ---
 
 ## 📦 Installation
 
-Navigate to `~/.config/opencode` directory:
+Navigate to your `~/.config/opencode` directory:
 
 ```bash
 # Using bun
@@ -93,121 +97,45 @@ Add to your `opencode.json`:
 
 | Command | Description |
 |---------|-------------|
-| `/sc-status` | Show knowledge base status and usage statistics |
-| `/sc-extract` | Manually trigger knowledge extraction |
-| `/sc-rebuild-index` | Rebuild `.knowledge/KNOWLEDGE.md` from all SKILL.md files |
-| `/sc-cleanup` | Clean up low-usage SKILL files (preview mode) |
-| `/sc-cleanup --confirm` | Actually delete low-usage SKILL files |
+| `/sc-init [focus?]` | Initialize project SKILL files by scanning source code. Run once before your first `/sc-update`. |
+| `/sc-update [focus?]` | Trigger the AI agent to extract knowledge from the current session. |
 
 ---
 
 ## ⚙️ Configuration
 
-No configuration required by default. To customize, create `~/.config/opencode/smart-codebase.json` (or `.jsonc`):
+Create `~/.config/opencode/smart-codebase.json` (or `.jsonc`) to customize:
 
 ```jsonc
 {
   "enabled": true,
-  "debounceMs": 30000,
-  "autoExtract": true,
-  "autoInject": true,
-  "extractionModel": "minimax/MiniMax-M2.1",
-  "disabledCommands": ["sc-rebuild-index"]
+  "extractionModel": "openai/gpt-4o",
+  "extractionMaxTokens": 16000
 }
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `enabled` | `true` | Enable/disable the plugin entirely |
-| `debounceMs` | `60000` | Wait time (ms) after session idle before extraction |
-| `autoExtract` | `true` | Automatically extract knowledge on idle |
-| `autoInject` | `true` | Inject knowledge hint at session start |
-| `extractionModel` | - | Model for extraction, format: `providerID/modelID` |
-| `extractionMaxTokens` | `8000` | Max token budget for extraction context |
-| `disabledCommands` | `[]` | Commands to disable, e.g. `["sc-rebuild-index"]` |
-| `cleanupThresholds` | See below | Thresholds for cleanup command |
-
-#### cleanupThresholds
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `cleanupThresholds.minAgeDays` | `60` | Minimum age in days for cleanup eligibility |
-| `cleanupThresholds.minAccessCount` | `5` | Maximum access count for cleanup eligibility |
-| `cleanupThresholds.maxInactiveDays` | `60` | Maximum days since last access for cleanup eligibility |
+| `enabled` | `true` | Enable or disable the plugin entirely. |
+| `extractionModel` | - | Model for the AI agent (e.g., `providerID/modelID`). |
+| `extractionMaxTokens` | `16000` | Token budget for the extraction context. |
 
 ---
 
-## 📁 File Structure Example
+## 📁 File Structure
+
+Knowledge is stored in your project directory using the standard OpenCode SKILL format:
 
 ```
 project/
-├── .opencode/
-│   └── skills/
-│       └── <project-name>/
-│           ├── SKILL.md          # Project skill (main index)
-│           └── modules/
-│               ├── src-auth.md   # Auth module knowledge
-│               └── src-api.md    # API module knowledge
-│
-├── src/
-│   ├── auth/
-│   │   ├── session.ts
-│   │   └── jwt.ts
-│   │
-│   └── api/
-│       └── routes.ts
+└── .opencode/
+    └── skills/
+        └── <project-name>/
+            ├── SKILL.md          # Main project skill and index
+            └── reference/        # Detailed documentation files
+                ├── architecture.md
+                └── api-patterns.md
 ```
-
-The project skill at `.opencode/skills/<project>/SKILL.md` serves as the global index and is auto-discovered by OpenCode. Module-level knowledge is stored in `.opencode/skills/<project>/modules/<module-name>.md`.
-
----
-
-### Usage Statistics
-
-The `/sc-status` command now displays:
-- Total SKILL count
-- Total access count across all SKILLs
-- Low-frequency SKILL count (based on cleanupThresholds)
-- Usage breakdown (high/medium/low)
-
-Example output:
-```
-📊 Usage Statistics:
-Total SKILLs: 15
-Total accesses: 234
-Low-frequency SKILLs (< 5 accesses): 3
-
-Usage breakdown:
-  - High usage (≥10 accesses): 8 SKILLs
-  - Medium usage (5-10): 4 SKILLs
-  - Low usage (<5): 3 SKILLs
-```
-
----
-
-### Cleanup Command
-
-Remove low-usage SKILL files based on configurable thresholds.
-
-**Preview mode (default)**:
-```bash
-/sc-cleanup
-```
-
-Lists eligible SKILLs without deleting them.
-
-**Confirm mode**:
-```bash
-/sc-cleanup --confirm
-```
-
-Actually deletes files and updates the main index.
-
-**Cleanup Criteria (AND logic)**:
-A SKILL is eligible for cleanup when ALL conditions are met:
-1. Age ≥ `minAgeDays` (default: 60 days)
-2. Access count < `minAccessCount` (default: 5)
-3. Days since last access ≥ `maxInactiveDays` (default: 60 days)
 
 ---
 
@@ -217,11 +145,14 @@ A SKILL is eligible for cleanup when ALL conditions are met:
 # Install dependencies
 bun install
 
-# Build
+# Build the plugin
 bun run build
 
-# Type check
+# Run type checks
 bun run typecheck
+
+# Run tests
+bun test
 ```
 
 ---

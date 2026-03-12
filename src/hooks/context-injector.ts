@@ -1,24 +1,19 @@
 import type { PluginInput, Hooks } from "@opencode-ai/plugin";
-import type { PluginConfig } from "../types";
 import { join } from "path";
 import { fileExists } from "../utils/fs-compat";
-import { getProjectSkillName } from "../storage/knowledge-writer";
+import { getProjectSkillName } from "../utils/skill-helpers";
 
 type ChatMessageInput = Parameters<NonNullable<Hooks["chat.message"]>>[0];
 type ChatMessageOutput = Parameters<NonNullable<Hooks["chat.message"]>>[1];
 type EventInput = Parameters<NonNullable<Hooks["event"]>>[0];
 
-export function createContextInjectorHook(ctx: PluginInput, config?: PluginConfig) {
+export function createContextInjectorHook(ctx: PluginInput) {
   const sessionKnowledgeInjected = new Set<string>();
 
   const chatMessage = async (
     input: ChatMessageInput,
     output: ChatMessageOutput,
   ) => {
-    if (config?.autoInject === false) {
-      return;
-    }
-
     if (sessionKnowledgeInjected.has(input.sessionID)) {
       return;
     }
@@ -28,32 +23,25 @@ export function createContextInjectorHook(ctx: PluginInput, config?: PluginConfi
       const skillPath = join(ctx.directory, '.opencode', 'skills', skillName, 'SKILL.md');
       const hasSkill = await fileExists(skillPath);
 
+      sessionKnowledgeInjected.add(input.sessionID);
+
       if (!hasSkill) {
-        sessionKnowledgeInjected.add(input.sessionID);
         return;
       }
 
-      const knowledgeHint = `
+      const hint = `Use skill(name="${skillName}") to load project knowledge.`;
 
----
-**[REQUIRED FIRST STEP]** Before any other action, read \`.opencode/skills/${skillName}/SKILL.md\` to discover available project knowledge. Then read relevant \`.knowledge/SKILL.md\` files for modules you'll modify. Do NOT skip this step.
----
-
-`;
-
-      const textParts = output.parts.filter(
-        (p): p is typeof p & { type: 'text'; text: string } => 
-          p.type === 'text' && typeof (p as any).text === 'string'
+      const textPart = output.parts.find(
+        (p): p is Extract<typeof p, { type: 'text' }> => p.type === 'text'
       );
 
-      if (textParts.length > 0) {
-        (textParts[0] as any).text = knowledgeHint + (textParts[0] as any).text;
+      if (textPart && 'text' in textPart) {
+        (textPart as { type: 'text'; text: string }).text = hint + '\n\n' + (textPart as { type: 'text'; text: string }).text;
       }
 
-      sessionKnowledgeInjected.add(input.sessionID);
-      console.log(`[smart-codebase] Injected knowledge hint for session ${input.sessionID}`);
+      console.log(`[smart-codebase] Injected skill hint for session ${input.sessionID}`);
     } catch (error) {
-      console.error('[smart-codebase] Failed to inject knowledge hint:', error);
+      console.error('[smart-codebase] Failed to inject skill hint:', error);
       sessionKnowledgeInjected.add(input.sessionID);
     }
   };
