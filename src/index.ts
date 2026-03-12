@@ -1,5 +1,6 @@
 import type { Plugin } from "@opencode-ai/plugin";
 import { updateCommand } from "./commands/update";
+import { initCommand } from "./commands/init";
 import { createContextInjectorHook } from "./hooks/context-injector";
 import { setPluginInput } from "./plugin-context";
 import { loadConfig } from "./config";
@@ -19,6 +20,7 @@ const SmartCodebasePlugin: Plugin = async (input) => {
     return {
       tool: {
         "sc-update": updateCommand,
+        "sc-init": initCommand,
       },
       "chat.message": async (hookInput, output) => {
         await contextInjector["chat.message"]?.(hookInput, output);
@@ -32,6 +34,10 @@ const SmartCodebasePlugin: Plugin = async (input) => {
           "sc-update": {
             template: "Use sc-update to update project SKILL files. Analyzes current session and extracts knowledge. Optional: specify focus area.",
             description: "Update project SKILL files from session knowledge",
+          },
+          "sc-init": {
+            template: "Use sc-init to initialize project SKILL files by scanning source code. Creates comprehensive knowledge from scratch. Optional: specify focus area.",
+            description: "Initialize project SKILL files from source code scan",
           },
         };
       },

@@ -8,7 +8,7 @@ import { buildExtractionSystemPrompt } from "./system-prompt";
 import { getProjectSkillName } from "../utils/skill-helpers";
 import { unwrapData, extractTextFromParts, withTimeout } from "../utils/sdk-helpers";
 
-function parseModelConfig(modelString?: string) {
+export function parseModelConfig(modelString?: string) {
   if (!modelString) return undefined;
   const [providerID, ...rest] = modelString.split("/");
   const modelID = rest.join("/");
