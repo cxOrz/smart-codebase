@@ -1,4 +1,5 @@
 import { join } from "path";
+import { existsSync } from "node:fs";
 import type { Part } from "@opencode-ai/sdk";
 import { getPluginInput } from "../plugin-context";
 import { loadConfig } from "../config";
@@ -55,6 +56,11 @@ export async function updateSkills(
   const skillName = getProjectSkillName(projectRoot);
   const skillDir = join(projectRoot, ".opencode", "skills", skillName);
 
+  const skillFileExists = existsSync(join(skillDir, "SKILL.md"));
+  const noSkillHint = skillFileExists
+    ? ""
+    : "💡 Tip: Run /sc-init first to generate comprehensive project knowledge from source code.\n\n";
+
   const systemPrompt = buildExtractionSystemPrompt({
     projectName: skillName,
     skillName,
@@ -88,10 +94,10 @@ export async function updateSkills(
       }),
       300000
     );
-    const responseMessage = unwrapData(
-      promptResult as { data?: { parts: Part[] }; error?: Error }
-    );
-    return extractTextFromParts(responseMessage.parts) || "SKILL update complete.";
+     const responseMessage = unwrapData(
+       promptResult as { data?: { parts: Part[] }; error?: Error }
+     );
+     return noSkillHint + (extractTextFromParts(responseMessage.parts) || "SKILL update complete.");
   } finally {
     try {
       await pluginInput.client.session.delete({ path: { id: childSessionID } });
