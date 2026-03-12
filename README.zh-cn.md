@@ -23,17 +23,23 @@ Smart-Codebase 通过 SKILL 文件为你的 AI 提供永久记忆。它利用 AI
 ```mermaid
 graph TB
     Start([会话工作])
+    Init[sc-init 命令]
     Update[sc-update 命令]
-    Agent[AI Agent 分析]
+    InitAgent[AI 扫描源代码]
+    UpdateAgent[AI 分析会话]
     SkillFile[.opencode/skills/project/SKILL.md<br/>OpenCode 自动发现]
     RefFiles[.opencode/skills/project/reference/*.md<br/>深度文档]
     NewSession([新会话开始])
     Injector[上下文注入器]
     
+    Start --> Init
     Start --> Update
-    Update --> Agent
-    Agent -->|写入| SkillFile
-    Agent -->|写入| RefFiles
+    Init --> InitAgent
+    Update --> UpdateAgent
+    InitAgent -->|写入| SkillFile
+    InitAgent -->|写入| RefFiles
+    UpdateAgent -->|更新| SkillFile
+    UpdateAgent -->|更新| RefFiles
     
     NewSession --> Injector
     Injector -->|注入提示| SkillFile
@@ -55,10 +61,11 @@ graph TB
 ## ⚙️ 工作原理
 
 1. **你正常工作** - 编辑文件、调试问题、做架构决策。
-2. **手动触发** - 当达到某个里程碑时，运行 `/sc-update`。
-3. **AI Agent 分析** - 子 AI 会话会分析你的对话记录和代码，理解发生了什么变化以及为什么。
-4. **知识沉淀** - Agent 会自主编写或更新符合 OpenCode 标准格式的 SKILL 文件。
-5. **下次会话开始** - 新会话会自动发现项目 SKILLs，让 AI 立即获得项目上下文。
+2. **首次初始化** - 运行一次 `/sc-init`，扫描源代码并生成完整的 SKILL 文件。
+3. **持续更新** - 达到里程碑时，运行 `/sc-update` 从当前会话中提取知识。
+4. **AI Agent 分析** - 子 AI 会话会分析你的对话记录或项目代码，理解发生了什么变化以及为什么。
+5. **知识沉淀** - Agent 会自主编写或更新符合 OpenCode 标准格式的 SKILL 文件。
+6. **下次会话开始** - 新会话会自动发现项目 SKILLs，让 AI 立即获得项目上下文。
 
 **手动控制意味着你决定何时保存知识，而 AI Agent 则承担了编写文档的繁重工作。**
 
@@ -90,7 +97,8 @@ npm install smart-codebase
 
 | 命令 | 描述 |
 |------|------|
-| `/sc-update [focus?]` | 触发 AI Agent 提取知识。可以使用可选的 focus 参数来引导 Agent。 |
+| `/sc-init [focus?]` | 通过扫描源代码初始化项目 SKILL 文件。在首次使用 `/sc-update` 之前运行一次。 |
+| `/sc-update [focus?]` | 触发 AI Agent 从当前会话中提取知识。可以使用可选的 focus 参数来引导 Agent。 |
 
 ---
 

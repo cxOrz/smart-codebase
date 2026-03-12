@@ -23,17 +23,23 @@ Smart-Codebase gives your AI permanent memory through SKILL files. It uses an AI
 ```mermaid
 graph TB
     Start([Session Work])
+    Init[sc-init command]
     Update[sc-update command]
-    Agent[AI Agent Analyzes]
+    InitAgent[AI Scans Source Code]
+    UpdateAgent[AI Analyzes Session]
     SkillFile[.opencode/skills/project/SKILL.md<br/>OpenCode Auto-Discovery]
     RefFiles[.opencode/skills/project/reference/*.md<br/>Deep Dive Docs]
     NewSession([New Session Starts])
     Injector[Context Injector]
     
+    Start --> Init
     Start --> Update
-    Update --> Agent
-    Agent -->|writes| SkillFile
-    Agent -->|writes| RefFiles
+    Init --> InitAgent
+    Update --> UpdateAgent
+    InitAgent -->|writes| SkillFile
+    InitAgent -->|writes| RefFiles
+    UpdateAgent -->|updates| SkillFile
+    UpdateAgent -->|updates| RefFiles
     
     NewSession --> Injector
     Injector -->|inject hint| SkillFile
@@ -55,10 +61,11 @@ graph TB
 ## ⚙️ How It Works
 
 1. **You work normally** - Edit files, debug issues, and make architectural decisions.
-2. **Manual capture** - When you reach a milestone, run `/sc-update`.
-3. **AI Agent analyzes** - A child AI session examines your conversation and code to understand what changed and why.
-4. **Knowledge distilled** - The agent autonomously writes or updates SKILL files in standard OpenCode format.
-5. **Next session starts** - New sessions auto-discover your project SKILLs, giving the AI immediate context.
+2. **First time setup** - Run `/sc-init` once to scan your source code and generate comprehensive SKILL files.
+3. **Ongoing capture** - When you reach a milestone, run `/sc-update` to extract knowledge from the current session.
+4. **AI Agent analyzes** - A child AI session examines your conversation or project code to understand what changed and why.
+5. **Knowledge distilled** - The agent autonomously writes or updates SKILL files in standard OpenCode format.
+6. **Next session starts** - New sessions auto-discover your project SKILLs, giving the AI immediate context.
 
 **Manual control means you decide exactly when to preserve knowledge. The AI agent handles the heavy lifting of writing documentation.**
 
@@ -90,7 +97,8 @@ Add to your `opencode.json`:
 
 | Command | Description |
 |---------|-------------|
-| `/sc-update [focus?]` | Trigger the AI agent to extract knowledge. Use optional focus to guide the agent. |
+| `/sc-init [focus?]` | Initialize project SKILL files by scanning source code. Run once before your first `/sc-update`. |
+| `/sc-update [focus?]` | Trigger the AI agent to extract knowledge from the current session. |
 
 ---
 
